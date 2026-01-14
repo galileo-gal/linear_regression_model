@@ -449,7 +449,170 @@ house-price-predictor/
 
 ---
 
-**Last Updated**: January 13, 2026
-**Status**: Days 1-6 Complete ✅ | Ready for Days 7-14
+---
+
+## Day 7: Feature Engineering & Model Optimization
+**Date**: January 14, 2026
+
+### Part 1: Feature Engineering (5 hours)
+
+#### Tasks Completed
+- ✅ Created `src/feature_engineering.py` module
+- ✅ Engineered 8 new features (interaction, ratio, composite)
+- ✅ Tested models with 15 features (7 base + 8 engineered)
+- ✅ Analyzed feature importance for engineered features
+- ✅ Tested selective feature engineering (best 2 only)
+
+#### Engineered Features
+1. **Interaction Terms:**
+   - Quality_Size = OverallQual × GrLivArea
+   - Age_Quality = House_Age × OverallQual
+
+2. **Ratio Features:**
+   - Bath_Density = FullBath / (GrLivArea/1000)
+   - Garage_Ratio = GarageCars / GrLivArea
+   - Basement_Ratio = TotalBsmtSF / 1stFlrSF
+
+3. **Composite Features:**
+   - Total_Space = GrLivArea + TotalBsmtSF
+   - House_Age = 2026 - YearBuilt
+   - Is_New = Binary flag (built after 2000)
+
+#### Results
+| Model Configuration | Features | Test R² | Change |
+|---------------------|----------|---------|--------|
+| Base                | 7        | 0.8714  | baseline |
+| All Engineered      | 15       | 0.8665  | -0.0049 |
+| Selective (best 2)  | 9        | 0.8668  | -0.0045 |
+
+**Key Finding:** Feature engineering decreased performance - base features are already optimal.
+
+#### Feature Importance Analysis
+**Top engineered features:**
+- Quality_Size: 2nd most important overall (weight=0.066)
+- Total_Space: 3rd most important (weight=0.047)
+- House_Age: Redundant with YearBuilt (cancels out)
+- Bath_Density: Negative weight (amplified multicollinearity)
+
+---
+
+### Part 2: Multicollinearity Resolution (1 hour)
+
+#### Problem Identified
+- FullBath has negative weight (-0.0207)
+- Correlation with GrLivArea: 0.638
+- Counterintuitive: more bathrooms = lower price?
+
+#### Investigation
+- Only 9 houses (0.6%) have 0 bathrooms
+- FullBath distribution: mostly 1-2 bathrooms
+- Multicollinearity confirmed
+
+#### Solution Implemented
+**Removed FullBath from feature set**
+
+#### Results
+```
+Model Comparison:
+  With FullBath (7 features):    Test R² = 0.8714
+  Without FullBath (6 features): Test R² = 0.8718
+  Improvement: +0.0005
+```
+
+**Final 6 Features:**
+1. OverallQual (0.1262)
+2. GrLivArea (0.1394) ← Most important
+3. GarageCars (0.0462)
+4. TotalBsmtSF (0.0602)
+5. 1stFlrSF (0.0245)
+6. YearBuilt (0.0810)
+
+**All weights now positive** - multicollinearity resolved ✓
+
+---
+
+### Part 3: Cross-Validation Optimization (1.5 hours)
+
+#### Problem Identified: Fold 7 Outlier
+**10-Fold CV (no shuffle):**
+- Mean R²: 0.8389
+- Std: 0.0569 (high variance)
+- **Fold 7: R² = 0.6799** ← Problematic
+
+#### Investigation
+Analyzed Fold 7 characteristics:
+- Contains 131 houses
+- OverallQual: -0.11 (15.2% below average)
+- GrLivArea: -0.09 (smaller houses)
+- YearBuilt: -0.06 (older houses)
+- Price: $153k avg vs $166k overall
+
+**Root Cause:** Sequential data split created cluster of low-quality houses in Fold 7. Linear model struggles with budget segment.
+
+#### Solution Implemented
+**Use shuffled K-Fold instead of sequential split**
+
+#### Results
+```
+Cross-Validation Comparison:
+  No Shuffle:  Mean=0.8389, Std=0.0569, Min=0.6799
+  With Shuffle: Mean=0.8423, Std=0.0256, Min=0.7834
+  
+Improvements:
+  - Std reduced by 55%: 0.0569 → 0.0256
+  - Worst fold improved: 0.6799 → 0.7834 (+0.1035)
+  - Mean improved: 0.8389 → 0.8423 (+0.0034)
+```
+
+**Fold 7 problem eliminated** ✓
+
+---
+
+### Day 7 Summary
+
+#### Final Model Specifications
+```
+Model: Linear Regression (Gradient Descent)
+Features: 6 (removed FullBath)
+Learning Rate: 0.01
+Iterations: 1000
+
+Performance:
+  Training R²: 0.8447
+  CV R² (10-fold shuffle): 0.8423 ± 0.0256
+  Test R²: 0.8718
+
+Feature Weights:
+  GrLivArea:    0.1394 (most important)
+  OverallQual:  0.1262
+  YearBuilt:    0.0810
+  TotalBsmtSF:  0.0602
+  GarageCars:   0.0462
+  1stFlrSF:     0.0245
+  Bias:        12.0278
+```
+
+#### Key Achievements
+1. ✅ Feature engineering thoroughly tested (conclusion: base features optimal)
+2. ✅ Multicollinearity resolved (removed FullBath, +0.0005 R²)
+3. ✅ CV methodology optimized (shuffled K-Fold, 55% std reduction)
+4. ✅ All model weights now positive and interpretable
+5. ✅ Model stability dramatically improved
+
+#### Key Learnings
+1. **More features ≠ better performance** - engineered features caused overfitting
+2. **Domain knowledge matters** - Quality × Size interaction made sense but didn't help
+3. **Data exploration reveals issues** - fold 7 analysis showed sequential split problem
+4. **Multicollinearity diagnosis** - negative weights are red flags
+5. **CV methodology critical** - shuffling essential for non-IID data
+
+#### Files Modified
+- `notebooks/01_eda.ipynb` (added Day 7 analysis)
+- `src/feature_engineering.py` (NEW - feature engineering functions)
+
+---
+
+**Last Updated**: January 14, 2026
+**Status**: Days 1-7 Complete ✅ | Ready for Days 7-14
 **Next Milestone**: Medium Article + Code Documentation
 
