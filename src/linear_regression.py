@@ -241,3 +241,93 @@ class LassoRegressionScratch:
         ss_res = np.sum((y - y_pred) ** 2)
         ss_tot = np.sum((y - np.mean(y)) ** 2)
         return 1 - (ss_res / ss_tot)
+
+
+class ElasticNetScratch:
+    """
+    Elastic Net Regression (L1 + L2 regularization) using Coordinate Descent.
+
+    Combines Ridge (L2) and Lasso (L1) penalties:
+    Cost = MSE + α * l1_ratio * |w| + α * (1-l1_ratio)/2 * w²
+
+    Parameters
+    ----------
+    alpha : float, default=1.0
+        Regularization strength. Must be positive.
+
+    l1_ratio : float, default=0.5
+        Mix ratio between L1 and L2.
+        - l1_ratio=0: Pure Ridge (L2)
+        - l1_ratio=1: Pure Lasso (L1)
+        - 0 < l1_ratio < 1: Elastic Net
+
+    n_iterations : int, default=1000
+        Maximum iterations for coordinate descent.
+
+    tol : float, default=1e-4
+        Convergence tolerance.
+    """
+
+    def __init__(self, alpha=1.0, l1_ratio=0.5, n_iterations=1000, tol=1e-4):
+        self.alpha = alpha
+        self.l1_ratio = l1_ratio
+        self.n_iterations = n_iterations
+        self.tol = tol
+        self.weights = None
+        self.bias = None
+
+    def _soft_threshold(self, rho, lambda_):
+        """Soft thresholding for L1 penalty"""
+        if rho < -lambda_:
+            return rho + lambda_
+        elif rho > lambda_:
+            return rho - lambda_
+        else:
+            return 0
+
+    def fit(self, X, y):
+        """Fit Elastic Net using coordinate descent"""
+        m, n = X.shape
+        self.weights = np.zeros(n)
+        self.bias = np.mean(y)
+
+        # Precompute for efficiency
+        l1_penalty = self.alpha * self.l1_ratio / m
+        l2_penalty = self.alpha * (1 - self.l1_ratio) / m
+
+        for iteration in range(self.n_iterations):
+            weights_old = self.weights.copy()
+
+            for j in range(n):
+                # Compute residual without feature j
+                residual = y - (X @ self.weights + self.bias) + X[:, j] * self.weights[j]
+
+                # Coordinate update with L1 and L2
+                rho = np.dot(X[:, j], residual) / m
+
+                # Elastic Net update
+                denominator = 1 + l2_penalty
+                self.weights[j] = self._soft_threshold(rho, l1_penalty) / denominator
+
+            # Update bias
+            self.bias = np.mean(y - X @ self.weights)
+
+            # Check convergence
+            if np.sum(np.abs(self.weights - weights_old)) < self.tol:
+                print(f"✓ Converged at iteration {iteration + 1}")
+                break
+
+        print(f"✓ Elastic Net trained (alpha={self.alpha}, l1_ratio={self.l1_ratio})")
+        return self
+
+    def predict(self, X):
+        return X @ self.weights + self.bias
+
+    def score(self, X, y):
+        y_pred = self.predict(X)
+        ss_res = np.sum((y - y_pred) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        return 1 - (ss_res / ss_tot)
+
+    def __repr__(self):
+        return f"ElasticNetScratch(alpha={self.alpha}, l1_ratio={self.l1_ratio})"
