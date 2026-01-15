@@ -89,18 +89,30 @@ pip install -r requirements.txt
 
 ```text
 house-price-predictor/
-├── notebooks/          # Exploratory Data Analysis and experimentation
-│   └── 01_eda.ipynb    # Main analysis and model training loop
-├── src/                # Pure Python implementations
-│   └── linear_regression.py  # Scratch-built ML classes
-├── models/             # Saved production models
-│   ├── ensemble_production_v1.pkl  # Final ensemble model
-│   ├── linear_model.pkl
-│   └── xgboost_model.pkl
-├── data/               # Dataset (not tracked in Git)
-├── .gitignore          # Environment and data exclusions
-├── requirements.txt    # Project dependencies
-└── README.md           # Project documentation
+├── notebooks/               # Exploratory Data Analysis and experimentation
+│   ├── 01_eda.ipynb        # Days 1-7: EDA, feature engineering, baseline models
+│   └── 02_advanced.ipynb   # Days 8-10: XGBoost, ensemble, calibration
+├── src/                     # Pure Python implementations
+│   ├── linear_regression.py     # Scratch-built ML classes (Linear, Ridge, Lasso, Elastic Net)
+│   ├── ensemble_model.py        # CalibratedPredictor class for production
+│   ├── data_loader.py           # Data preprocessing pipeline
+│   ├── model_trainer.py         # Training utilities
+│   ├── model_evaluator.py       # Evaluation and cross-validation
+│   ├── feature_engineering.py   # Feature engineering functions
+│   ├── visualizations.py        # Plotting utilities
+│   ├── utils.py                 # Helper functions
+│   └── demo.py                  # Inference demo script
+├── models/                  # Saved production models
+│   ├── ensemble_production_v1.pkl  # Main ensemble model (Linear + XGBoost)
+│   ├── linear_model.pkl            # Base linear regression model
+│   └── xgboost_model.pkl           # Base XGBoost model
+├── data/                    # Dataset (not tracked in Git)
+│   ├── train.csv           # Kaggle training data
+│   └── test.csv            # Kaggle test data
+├── .gitignore              # Environment and data exclusions
+├── requirements.txt        # Project dependencies
+├── README.md               # Project documentation
+└── PROJECT_LOG.md          # Detailed daily progress log
 
 ```
 
